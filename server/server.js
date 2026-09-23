@@ -4,6 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const Feedback = require('./models/FeedBack');
+const ActionTicket = require('./models/ActionTickets');
 
 const app = express();
 app.use(express.json());
@@ -19,17 +20,55 @@ mongoose
 app.post('/api/feedback', async (req, res) => {
   try {
     const { guestName, source, rating, comment, sentiment, departmentTag } = req.body;
+    if (!guestName?.trim() || !source || !Number.isInteger(rating) || !comment?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'guestName, source, integer rating, and comment are required',
+      });
+    }
+
     const newFeedback = new Feedback({
-      guestName,
+      guestName: guestName.trim(),
       source,
       rating,
-      comment,
+      comment: comment.trim(),
       sentiment,
       departmentTag,
       isActionRequired: rating <= 2,
     });
     const savedFeedback = await newFeedback.save();
     res.status(201).json({ success: true, data: savedFeedback });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+// 2. WRITE Operation: Create an action ticket for existing feedback (POST)
+app.post('/api/action-tickets', async (req, res) => {
+  try {
+    const { feedbackId, assignedTo, issueDescription, priority } = req.body;
+    if (!mongoose.isValidObjectId(feedbackId)) {
+      return res.status(400).json({ success: false, message: 'A valid feedbackId is required' });
+    }
+    if (!assignedTo?.trim() || !issueDescription?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'assignedTo and issueDescription are required',
+      });
+    }
+
+    const feedback = await Feedback.findById(feedbackId);
+    if (!feedback) {
+      return res.status(404).json({ success: false, message: 'Feedback not found' });
+    }
+
+    const ticket = await ActionTicket.create({
+      feedbackId,
+      assignedTo: assignedTo.trim(),
+      issueDescription: issueDescription.trim(),
+      priority,
+    });
+    res.status(201).json({ success: true, data: ticket });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
