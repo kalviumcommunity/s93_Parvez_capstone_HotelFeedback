@@ -5,3 +5,4 @@ The Hotel Guest Feedback Intelligence Platform centralizes external reviews from
 - Day 1-5: Setup & DB Schema
 - Day 6-10: Core Features & Dashboard
 - Day 11-15: Integration & Testing
+# s93_Parvez_capstone_HotelFeedback
