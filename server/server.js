@@ -35,11 +35,35 @@ app.post('/api/feedback', async (req, res) => {
   }
 });
 
-// 2. READ Operation: Fetch all feedback entries from database (GET)
+// 2. READ Operation: Fetch feedback entries, optionally filtered by source or rating.
 app.get('/api/feedback', async (req, res) => {
   try {
-    const feedbacks = await Feedback.find().sort({ createdAt: -1 });
+    const { source, rating } = req.query;
+    const query = {};
+
+    if (source) query.source = source;
+    if (rating) query.rating = Number(rating);
+
+    const feedbacks = await Feedback.find(query).sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: feedbacks.length, data: feedbacks });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 3. READ Operation: Fetch one feedback entry by its database id (GET)
+app.get('/api/feedback/:id', async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid feedback id' });
+    }
+
+    const feedback = await Feedback.findById(req.params.id);
+    if (!feedback) {
+      return res.status(404).json({ success: false, message: 'Feedback not found' });
+    }
+
+    res.status(200).json({ success: true, data: feedback });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
