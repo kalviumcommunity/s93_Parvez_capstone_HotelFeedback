@@ -108,6 +108,75 @@ app.get('/api/feedback/:id', async (req, res) => {
   }
 });
 
+// 4. UPDATE Operation: Update an existing feedback entry (PUT)
+app.put('/api/feedback/:id', async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid feedback id' });
+    }
+
+    const allowedFields = ['guestName', 'source', 'rating', 'comment', 'sentiment', 'departmentTag'];
+    const updates = Object.fromEntries(
+      Object.entries(req.body).filter(([field]) => allowedFields.includes(field)),
+    );
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, message: 'At least one feedback field is required' });
+    }
+    if (updates.guestName !== undefined) updates.guestName = updates.guestName.trim();
+    if (updates.comment !== undefined) updates.comment = updates.comment.trim();
+    if (updates.rating !== undefined) {
+      if (!Number.isInteger(updates.rating)) {
+        return res.status(400).json({ success: false, message: 'rating must be an integer' });
+      }
+      updates.isActionRequired = updates.rating <= 2;
+    }
+
+    const feedback = await Feedback.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true,
+    });
+    if (!feedback) {
+      return res.status(404).json({ success: false, message: 'Feedback not found' });
+    }
+
+    res.status(200).json({ success: true, data: feedback });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+// 5. UPDATE Operation: Update an action ticket (PUT)
+app.put('/api/action-tickets/:id', async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid action ticket id' });
+    }
+
+    const allowedFields = ['assignedTo', 'issueDescription', 'priority', 'status'];
+    const updates = Object.fromEntries(
+      Object.entries(req.body).filter(([field]) => allowedFields.includes(field)),
+    );
+    if (updates.assignedTo !== undefined) updates.assignedTo = updates.assignedTo.trim();
+    if (updates.issueDescription !== undefined) updates.issueDescription = updates.issueDescription.trim();
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, message: 'At least one ticket field is required' });
+    }
+
+    const ticket = await ActionTicket.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true,
+    });
+    if (!ticket) {
+      return res.status(404).json({ success: false, message: 'Action ticket not found' });
+    }
+
+    res.status(200).json({ success: true, data: ticket });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
 
 
 const PORT = process.env.PORT || 5000;
