@@ -177,6 +177,41 @@ app.put('/api/action-tickets/:id', async (req, res) => {
   }
 });
 
+app.delete('/api/feedback/:id', async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid feedback id' });
+    }
+
+    const feedback = await Feedback.findByIdAndDelete(req.params.id);
+    if (!feedback) {
+      return res.status(404).json({ success: false, message: 'Feedback not found' });
+    }
+
+    await ActionTicket.deleteMany({ feedbackId: req.params.id });
+    res.status(200).json({ success: true, data: feedback });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.delete('/api/action-tickets/:id', async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid action ticket id' });
+    }
+
+    const ticket = await ActionTicket.findByIdAndDelete(req.params.id);
+    if (!ticket) {
+      return res.status(404).json({ success: false, message: 'Action ticket not found' });
+    }
+
+    res.status(200).json({ success: true, data: ticket });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 
 
 const PORT = process.env.PORT || 5000;

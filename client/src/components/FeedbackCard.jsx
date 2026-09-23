@@ -1,6 +1,6 @@
 import React from 'react';
 
-function FeedbackCard({ guestName, source, rating, comment, sentiment }) {
+function FeedbackCard({ guestName, source, rating, comment, sentiment, onEdit, onDelete }) {
   const getBadgeColor = (type) => {
     if (type === 'Positive') return '#22c55e';
     if (type === 'Negative') return '#ef4444';
@@ -17,6 +17,10 @@ function FeedbackCard({ guestName, source, rating, comment, sentiment }) {
       </div>
       <p style={{ margin: '0.5rem 0', color: '#334155' }}>"{comment}"</p>
       <small style={{ color: '#64748b' }}>Rating: {rating} / 5</small>
+      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+        <button type="button" onClick={onEdit}>Edit</button>
+        <button type="button" onClick={onDelete}>Delete</button>
+      </div>
     </div>
   );
 }
