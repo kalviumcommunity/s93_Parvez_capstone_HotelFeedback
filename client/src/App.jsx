@@ -10,6 +10,7 @@ function App() {
     rating: 5,
     comment: '',
   });
+  const [editingId, setEditingId] = useState(null);
   const [status, setStatus] = useState('Loading feedback...');
 
   useEffect(() => {
@@ -27,23 +28,64 @@ function App() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setStatus('Saving feedback...');
+    const isEditing = Boolean(editingId);
+    setStatus(isEditing ? 'Updating feedback...' : 'Saving feedback...');
 
     try {
-      const response = await fetch('http://localhost:5000/api/feedback', {
-        method: 'POST',
+      const response = await fetch(`http://localhost:5000/api/feedback${isEditing ? `/${editingId}` : ''}`, {
+        method: isEditing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || 'Unable to save feedback');
 
-      setFeedbacks((currentFeedbacks) => [result.data, ...currentFeedbacks]);
+      setFeedbacks((currentFeedbacks) => isEditing
+        ? currentFeedbacks.map((item) => item._id === result.data._id ? result.data : item)
+        : [result.data, ...currentFeedbacks]);
       setForm({ guestName: '', source: 'Google', rating: 5, comment: '' });
-      setStatus('Feedback saved to the database.');
+      setEditingId(null);
+      setStatus(isEditing ? 'Feedback updated.' : 'Feedback saved to the database.');
     } catch (error) {
       setStatus(error.message);
     }
+  };
+
+  const handleEdit = (feedback) => {
+    setEditingId(feedback._id);
+    setForm({
+      guestName: feedback.guestName,
+      source: feedback.source,
+      rating: feedback.rating,
+      comment: feedback.comment,
+    });
+    setStatus('Editing feedback...');
+  };
+
+  const handleDelete = async (feedbackId) => {
+    if (!window.confirm('Delete this feedback?')) return;
+    setStatus('Deleting feedback...');
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/feedback/${feedbackId}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Unable to delete feedback');
+
+      setFeedbacks((currentFeedbacks) => currentFeedbacks.filter((item) => item._id !== feedbackId));
+      if (editingId === feedbackId) {
+        setEditingId(null);
+        setForm({ guestName: '', source: 'Google', rating: 5, comment: '' });
+      }
+      setStatus('Feedback deleted.');
+    } catch (error) {
+      setStatus(error.message);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setForm({ guestName: '', source: 'Google', rating: 5, comment: '' });
+    setStatus('');
   };
 
   return (
@@ -61,11 +103,12 @@ function App() {
           </select>
           <input required type="number" min="1" max="5" value={form.rating} onChange={(event) => setForm({ ...form, rating: Number(event.target.value) })} />
           <textarea required placeholder="Guest comment" value={form.comment} onChange={(event) => setForm({ ...form, comment: event.target.value })} />
-          <button type="submit">Save feedback</button>
+          <button type="submit">{editingId ? 'Update feedback' : 'Save feedback'}</button>
+          {editingId && <button type="button" onClick={cancelEdit}>Cancel</button>}
         </form>
         {status && <p>{status}</p>}
         {feedbacks.map((item) => (
-          <FeedbackCard key={item._id} {...item} />
+          <FeedbackCard key={item._id} {...item} onEdit={() => handleEdit(item)} onDelete={() => handleDelete(item._id)} />
         ))}
       </main>
     </div>
