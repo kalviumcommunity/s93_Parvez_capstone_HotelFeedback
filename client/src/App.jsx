@@ -1,14 +1,23 @@
 import React from 'react';
+import Navbar from './components/Navbar';
+import FeedbackCard from './components/FeedbackCard';
 
 function App() {
+  const mockFeedbacks = [
+    { id: 1, guestName: 'Sarah Jenkins', source: 'Google', rating: 5, comment: 'The check-in was seamless and housekeeping was exceptional!', sentiment: 'Positive' },
+    { id: 2, guestName: 'Michael Brown', source: 'TripAdvisor', rating: 2, comment: 'Air conditioning was noisy and breakfast cold.', sentiment: 'Negative' },
+    { id: 3, guestName: 'Anita Roy', source: 'Booking.com', rating: 3, comment: 'Average stay, good location but parking was tight.', sentiment: 'Neutral' },
+  ];
+
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: '2rem', textAlign: 'center' }}>
-      <h1>Hotel Guest Feedback Intelligence Platform</h1>
-      <p>Multi-Channel Review Aggregation & Sentiment Analysis Dashboard</p>
-      <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem', marginTop: '1rem' }}>
-        <h3>System Status: Frontend Initialized (Vite + React)</h3>
-        <p>Ready for API Integration & Analytics Visualization</p>
-      </div>
+    <div>
+      <Navbar />
+      <main style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+        <h3>Recent Guest Feedback</h3>
+        {mockFeedbacks.map((item) => (
+          <FeedbackCard key={item.id} {...item} />
+        ))}
+      </main>
     </div>
   );
 }
