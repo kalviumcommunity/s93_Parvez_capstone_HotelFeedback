@@ -5,16 +5,85 @@ require('dotenv').config();
 
 const Feedback = require('./models/FeedBack');
 const ActionTicket = require('./models/ActionTickets');
+const User = require('./models/User');
+const { authenticate, createSession, hashPassword, hashSessionToken, verifyPassword } = require('./auth');
+const Session = require('./models/Session');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
 
 // Connect to MongoDB Database
 mongoose
   .connect(process.env.MONGO_URI || 'mongodb://localhost:27017/hotel_feedback_db')
   .then(() => console.log('MongoDB connected successfully'))
   .catch((err) => console.error('MongoDB connection error:', err));
+
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (typeof username !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ success: false, message: 'Username and password are required' });
+    }
+
+    const normalizedUsername = username.trim().toLowerCase();
+    if (!/^[a-z0-9._-]{3,32}$/.test(normalizedUsername)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username must be 3-32 characters using letters, numbers, dots, underscores, or hyphens',
+      });
+    }
+    if (password.length < 8 || Buffer.byteLength(password, 'utf8') > 128) {
+      return res.status(400).json({ success: false, message: 'Password must be 8-128 characters' });
+    }
+
+    const user = await User.create({ username: normalizedUsername, passwordHash: await hashPassword(password) });
+    const session = await createSession(user._id);
+    res.status(201).json({
+      success: true,
+      data: { token: session.token, user: { id: user._id, username: user.username } },
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ success: false, message: 'That username is already in use' });
+    }
+    res.status(500).json({ success: false, message: 'Unable to create account' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (typeof username !== 'string' || typeof password !== 'string' || !username.trim() || !password) {
+      return res.status(400).json({ success: false, message: 'Username and password are required' });
+    }
+
+    const user = await User.findOne({ username: username.trim().toLowerCase() }).select('+passwordHash');
+    if (!user || !(await verifyPassword(password, user.passwordHash))) {
+      if (!user) await hashPassword(password);
+      return res.status(401).json({ success: false, message: 'Incorrect username or password' });
+    }
+
+    const session = await createSession(user._id);
+    res.status(200).json({
+      success: true,
+      data: { token: session.token, user: { id: user._id, username: user.username } },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Unable to sign in' });
+  }
+});
+
+app.post('/api/auth/logout', authenticate, async (req, res) => {
+  try {
+    await Session.deleteOne({ tokenHash: req.auth.tokenHash });
+    res.status(200).json({ success: true, message: 'Signed out' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Unable to sign out' });
+  }
+});
+
+app.use('/api', authenticate);
 
 // 1. WRITE Operation: Create a new feedback entry (POST)
 app.post('/api/feedback', async (req, res) => {
