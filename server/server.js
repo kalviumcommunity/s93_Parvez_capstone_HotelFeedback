@@ -74,6 +74,17 @@ app.post('/api/action-tickets', async (req, res) => {
   }
 });
 
+app.get('/api/action-tickets', async (req, res) => {
+  try {
+    const tickets = await ActionTicket.find()
+      .populate('feedbackId')
+      .sort({ createdAt: -1 });
+    res.status(200).json({ success: true, count: tickets.length, data: tickets });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // 2. READ Operation: Fetch feedback entries, optionally filtered by source or rating.
 app.get('/api/feedback', async (req, res) => {
   try {
@@ -83,7 +94,9 @@ app.get('/api/feedback', async (req, res) => {
     if (source) query.source = source;
     if (rating) query.rating = Number(rating);
 
-    const feedbacks = await Feedback.find(query).sort({ createdAt: -1 });
+    const feedbacks = await Feedback.find(query)
+      .populate({ path: 'actionTickets', options: { sort: { createdAt: -1 } } })
+      .sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: feedbacks.length, data: feedbacks });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -97,7 +110,7 @@ app.get('/api/feedback/:id', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid feedback id' });
     }
 
-    const feedback = await Feedback.findById(req.params.id);
+    const feedback = await Feedback.findById(req.params.id).populate('actionTickets');
     if (!feedback) {
       return res.status(404).json({ success: false, message: 'Feedback not found' });
     }
