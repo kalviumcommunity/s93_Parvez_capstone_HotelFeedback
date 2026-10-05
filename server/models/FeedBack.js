@@ -39,7 +39,15 @@ const feedbackSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
+
+feedbackSchema.virtual('actionTickets', {
+  ref: 'ActionTicket',
+  localField: '_id',
+  foreignField: 'feedbackId',
+});
 
 module.exports = mongoose.model('Feedback', feedbackSchema);
