@@ -23,6 +23,12 @@ The **Hotel Guest Feedback Intelligence Platform** is an external multi-channel 
 * **Reputation Analytics Dashboard:** Visualizes cross-channel rating trends, department-level performance metrics, and sentiment distribution over time.
 * **Response Management:** Allows hotel managers to draft and track response statuses (Pending, Responded, Escalated) for external reviews.
 
+## Authentication
+
+Create an account or sign in from the application using a username and password. Usernames are 3-32 characters and may contain letters, numbers, dots, underscores, and hyphens. Passwords must be at least 8 characters.
+
+`POST /api/auth/register` creates an account, and `POST /api/auth/login` starts a 12-hour session. Both return a bearer token. The client keeps the token for the current browser session and sends it with protected API requests. `POST /api/auth/logout` invalidates the current session. All other `/api` routes require the bearer token.
+
 ---
 
 ## Day-by-Day Implementation Plan
