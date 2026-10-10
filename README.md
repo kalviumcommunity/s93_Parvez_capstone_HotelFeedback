@@ -27,7 +27,7 @@ The **Hotel Guest Feedback Intelligence Platform** is an external multi-channel 
 
 Create an account or sign in from the application using a username and password. Usernames are 3-32 characters and may contain letters, numbers, dots, underscores, and hyphens. Passwords must be at least 8 characters.
 
-`POST /api/auth/register` creates an account, and `POST /api/auth/login` starts a 12-hour session. Both return a bearer token. The client keeps the token for the current browser session and sends it with protected API requests. `POST /api/auth/logout` invalidates the current session. All other `/api` routes require the bearer token.
+`POST /api/auth/register` creates an account, and `POST /api/auth/login` starts a 12-hour session. Both return an HS256-signed JWT bearer token. Set `JWT_SECRET` in `server/.env` to a private value of at least 32 bytes before starting the server. The server also stores a hash of each issued token so `POST /api/auth/logout` can revoke the current session. The client keeps the token for the current browser session and sends it with protected API requests. All other `/api` routes require a valid, unexpired bearer token.
 
 ---
 
