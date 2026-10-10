@@ -6,6 +6,11 @@ const scryptAsync = promisify(scrypt);
 const PASSWORD_HASH_BYTES = 64;
 const SESSION_TTL_SECONDS = 12 * 60 * 60;
 const JWT_ISSUER = 'hotel-feedback';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (typeof JWT_SECRET !== 'string' || Buffer.byteLength(JWT_SECRET, 'utf8') < 32) {
+  throw new Error('JWT_SECRET must be configured with at least 32 bytes');
+}
 
 async function hashPassword(password) {
   const salt = randomBytes(16);
@@ -33,14 +38,6 @@ function hashSessionToken(token) {
   return createHash('sha256').update(token).digest('hex');
 }
 
-function getJwtSecret() {
-  const secret = process.env.JWT_SECRET;
-  if (typeof secret !== 'string' || Buffer.byteLength(secret, 'utf8') < 32) {
-    throw new Error('JWT_SECRET must be configured with at least 32 bytes');
-  }
-  return secret;
-}
-
 function signSessionToken(userId) {
   const issuedAt = Math.floor(Date.now() / 1000);
   const expiresAt = issuedAt + SESSION_TTL_SECONDS;
@@ -52,7 +49,7 @@ function signSessionToken(userId) {
     exp: expiresAt,
   })).toString('base64url');
   const signingInput = `${header}.${payload}`;
-  const signature = createHmac('sha256', getJwtSecret()).update(signingInput).digest('base64url');
+  const signature = createHmac('sha256', JWT_SECRET).update(signingInput).digest('base64url');
 
   return {
     token: `${signingInput}.${signature}`,
@@ -74,7 +71,7 @@ function verifySessionToken(token) {
   }
 
   const signingInput = `${encodedHeader}.${encodedPayload}`;
-  const expectedSignature = createHmac('sha256', getJwtSecret()).update(signingInput).digest();
+  const expectedSignature = createHmac('sha256', JWT_SECRET).update(signingInput).digest();
   const actualSignature = Buffer.from(encodedSignature, 'base64url');
   if (actualSignature.length !== expectedSignature.length || !timingSafeEqual(actualSignature, expectedSignature)) {
     throw new Error('Invalid JWT signature');
@@ -87,6 +84,7 @@ function verifySessionToken(token) {
     !Number.isSafeInteger(payload.iat) ||
     payload.iat > now + 60 ||
     !Number.isSafeInteger(payload.exp) ||
+    payload.exp <= payload.iat ||
     payload.exp <= now
   ) {
     throw new Error('Invalid or expired JWT');
