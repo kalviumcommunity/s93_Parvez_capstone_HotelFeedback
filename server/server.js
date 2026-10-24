@@ -95,7 +95,15 @@ app.post('/api/auth/register', async (req, res) => {
     const session = await createSession(user._id);
     res.status(201).json({
       success: true,
-      data: { token: session.token, user: { id: user._id, username: user.username } },
+      data: {
+        token: session.token,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email || null,
+          displayName: user.displayName || null,
+        },
+      },
     });
   } catch (error) {
     if (error.code === 11000) {
@@ -121,7 +129,15 @@ app.post('/api/auth/login', async (req, res) => {
     const session = await createSession(user._id);
     res.status(200).json({
       success: true,
-      data: { token: session.token, user: { id: user._id, username: user.username } },
+      data: {
+        token: session.token,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email || null,
+          displayName: user.displayName || null,
+        },
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Unable to sign in' });
@@ -145,7 +161,7 @@ app.post('/api/auth/google', async (req, res) => {
     return res.status(401).json({ success: false, message: 'Google sign-in could not be verified' });
   }
 
-  const { googleId, email } = identity;
+  const { googleId, email, displayName } = identity;
   try {
     let user = await User.findOne({ googleId });
     if (!user) {
@@ -156,6 +172,7 @@ app.post('/api/auth/google', async (req, res) => {
 
       if (user) {
         user.googleId = googleId;
+        if (displayName) user.displayName = displayName;
         await user.save();
       } else {
         const baseUsername = email.split('@')[0].replace(/[^a-z0-9._-]/g, '').slice(0, 23) || 'googleuser';
@@ -164,14 +181,22 @@ app.post('/api/auth/google', async (req, res) => {
           username = `${baseUsername}-${randomBytes(4).toString('hex')}`;
         } while (await User.exists({ username }));
 
-        user = await User.create({ username, email, googleId });
+        user = await User.create({ username, email, googleId, displayName });
       }
     }
 
     const session = await createSession(user._id);
     res.status(200).json({
       success: true,
-      data: { token: session.token, user: { id: user._id, username: user.username } },
+      data: {
+        token: session.token,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email || email,
+          displayName: user.displayName || displayName || user.username,
+        },
+      },
     });
   } catch (error) {
     if (error.code === 11000 && googleId) {
@@ -180,7 +205,15 @@ app.post('/api/auth/google', async (req, res) => {
         const session = await createSession(existingUser._id);
         return res.status(200).json({
           success: true,
-          data: { token: session.token, user: { id: existingUser._id, username: existingUser.username } },
+          data: {
+            token: session.token,
+            user: {
+              id: existingUser._id,
+              username: existingUser.username,
+              email: existingUser.email || email,
+              displayName: existingUser.displayName || displayName || existingUser.username,
+            },
+          },
         });
       }
     }

@@ -57,7 +57,11 @@ async function verifyGoogleCredential(credential, clientId) {
     throw new Error('Invalid Google credential');
   }
 
-  return { googleId: claims.sub, email: claims.email.trim().toLowerCase() };
+  return {
+    googleId: claims.sub,
+    email: claims.email.trim().toLowerCase(),
+    displayName: typeof claims.name === 'string' ? claims.name.trim() : '',
+  };
 }
 
 function hashSessionToken(token) {

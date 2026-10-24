@@ -29,6 +29,11 @@ const userSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
     },
+    displayName: {
+      type: String,
+      trim: true,
+      maxlength: 120,
+    },
   },
   { timestamps: true }
 );

@@ -5,7 +5,7 @@ import FeedbackUploadForm from './components/FeedbackUploadForm';
 // ==========================================
 // 1. HEADER / NAVBAR COMPONENT
 // ==========================================
-function Navbar({ activeTab, setActiveTab, username, onSignOut }) {
+function Navbar({ activeTab, setActiveTab, username, displayName, email, onSignOut }) {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'reviews', label: 'Reviews Queue' },
@@ -38,7 +38,10 @@ function Navbar({ activeTab, setActiveTab, username, onSignOut }) {
               {tab.label}
             </button>
           ))}
-          <span style={styles.navAccount}>{username}</span>
+          <span style={styles.navAccount}>
+            {displayName && <strong>{displayName}</strong>}
+            <small style={styles.navAccountEmail}>{email || username}</small>
+          </span>
           <button type="button" onClick={onSignOut} style={styles.signOutButton}>
             Sign out
           </button>
@@ -183,7 +186,12 @@ export default function App() {
   const [auth, setAuth] = useState(() => {
     const token = sessionStorage.getItem('authToken');
     return token
-      ? { token, username: sessionStorage.getItem('authUsername') || '' }
+      ? {
+        token,
+        username: sessionStorage.getItem('authUsername') || '',
+        displayName: sessionStorage.getItem('authDisplayName') || '',
+        email: sessionStorage.getItem('authEmail') || '',
+      }
       : null;
   });
 
@@ -205,6 +213,8 @@ export default function App() {
         if (response.status === 401) {
           sessionStorage.removeItem('authToken');
           sessionStorage.removeItem('authUsername');
+          sessionStorage.removeItem('authDisplayName');
+          sessionStorage.removeItem('authEmail');
           if (active) setAuth(null);
           return null;
         }
@@ -230,7 +240,14 @@ export default function App() {
   const handleAuthenticated = ({ token, user }) => {
     sessionStorage.setItem('authToken', token);
     sessionStorage.setItem('authUsername', user.username);
-    setAuth({ token, username: user.username });
+    sessionStorage.setItem('authDisplayName', user.displayName || '');
+    sessionStorage.setItem('authEmail', user.email || '');
+    setAuth({
+      token,
+      username: user.username,
+      displayName: user.displayName || '',
+      email: user.email || '',
+    });
   };
 
   const handleSignOut = async () => {
@@ -244,6 +261,8 @@ export default function App() {
     } finally {
       sessionStorage.removeItem('authToken');
       sessionStorage.removeItem('authUsername');
+      sessionStorage.removeItem('authDisplayName');
+      sessionStorage.removeItem('authEmail');
       setAuth(null);
       setFeedbacks([]);
     }
@@ -262,6 +281,8 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         username={auth.username}
+        displayName={auth.displayName}
+        email={auth.email}
         onSignOut={handleSignOut}
       />
 
@@ -464,9 +485,18 @@ const styles = {
     gap: '0.5rem',
   },
   navAccount: {
+    display: 'flex',
+    flexDirection: 'column',
+    maxWidth: '220px',
+    overflowWrap: 'anywhere',
     color: '#e2e8f0',
-    fontSize: '0.8rem',
+    fontSize: '0.85rem',
     marginLeft: '0.5rem',
+    textAlign: 'right',
+  },
+  navAccountEmail: {
+    color: '#94a3b8',
+    fontSize: '0.7rem',
   },
   signOutButton: {
     background: 'transparent',

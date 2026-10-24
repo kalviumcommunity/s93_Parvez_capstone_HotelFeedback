@@ -9,6 +9,11 @@ export default function AuthScreen({ onAuthenticated }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const googleButtonRef = useRef(null);
+  const onAuthenticatedRef = useRef(onAuthenticated);
+
+  useEffect(() => {
+    onAuthenticatedRef.current = onAuthenticated;
+  }, [onAuthenticated]);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || !googleButtonRef.current) return undefined;
@@ -30,7 +35,7 @@ export default function AuthScreen({ onAuthenticated }) {
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || 'Google sign-in failed');
-            onAuthenticated(result.data);
+            onAuthenticatedRef.current(result.data);
           } catch (requestError) {
             setError(requestError.message || 'Could not connect to the server');
           } finally {
@@ -51,7 +56,7 @@ export default function AuthScreen({ onAuthenticated }) {
     document.head.appendChild(script);
 
     return () => script.remove();
-  }, [onAuthenticated]);
+  }, []);
 
   async function handleSubmit(event) {
     event.preventDefault();
