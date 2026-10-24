@@ -51,6 +51,10 @@ Restart the client and server after setting these values. Google sign-in is hidd
 
 The dashboard can attach one PNG, JPEG, or PDF file (up to 5 MB) when creating feedback. The server checks the file signature, assigns a generated storage name, and saves attachment metadata with the feedback record under `server/uploads`. Attachment downloads require an authenticated session. Removing feedback also removes its stored attachment.
 
+## Bruno API Collection
+
+The Bruno request collection for all API routes is in [bruno/](bruno/). Open the folder in Bruno, select the `Local` environment, and start the server. Request examples and authentication notes are in [bruno/README.md](bruno/README.md).
+
 ---
 
 ## Day-by-Day Implementation Plan

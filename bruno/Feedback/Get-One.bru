@@ -1,0 +1,15 @@
+meta {
+  name: Get Feedback By ID
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/feedback/{{feedbackId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

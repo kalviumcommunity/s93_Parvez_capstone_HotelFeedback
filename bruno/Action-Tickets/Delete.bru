@@ -1,0 +1,15 @@
+meta {
+  name: Delete Action Ticket
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{baseUrl}}/api/action-tickets/{{actionTicketId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
