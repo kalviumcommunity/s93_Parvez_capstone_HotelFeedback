@@ -456,6 +456,18 @@ app.delete('/api/action-tickets/:id', async (req, res) => {
   }
 });
 
+app.use((error, req, res, next) => {
+  if (error.type === 'entity.too.large') {
+    return res.status(413).json({
+      success: false,
+      message: 'Request payload exceeds 7 MB. Attachments are limited to 5 MB.',
+    });
+  }
+  if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
+    return res.status(400).json({ success: false, message: 'Request body must be valid JSON' });
+  }
+  return next(error);
+});
 
 
 const PORT = process.env.PORT || 5000;

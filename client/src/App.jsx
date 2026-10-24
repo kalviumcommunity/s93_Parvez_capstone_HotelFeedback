@@ -107,8 +107,10 @@ function FeedbackCard({ _id, guestName, source, rating, comment, sentiment, depa
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = attachment.fileName;
+      document.body.appendChild(link);
       link.click();
-      URL.revokeObjectURL(downloadUrl);
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
     } catch (error) {
       setDownloadError(error.message || 'Unable to download attachment');
     }
