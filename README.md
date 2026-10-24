@@ -45,7 +45,11 @@ GOOGLE_CLIENT_ID=your-google-oauth-client-id
 VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id
 ```
 
-Restart the client and server after setting these values. Google sign-in is hidden until the client ID is configured. Google accounts are matched by verified email and use the same protected API and revocable session flow as password accounts.
+Restart the client and server after setting these values. Google sign-in is hidden until the client ID is configured. Google accounts are matched by verified email and use the same protected API and revocable session flow as password accounts. On success, the app shows the verified Google display name and email in the signed-in navbar; use **Sign out** to revoke the session and return to the authentication screen.
+
+The sign-in flow uses Google Identity Services to obtain an ID token. The client sends that token to `POST /api/auth/google`; the server verifies its audience, issuer, expiry, and verified-email claim before creating or matching the user and issuing the app's own session token.
+
+For a demo, configure the same OAuth client ID in both apps, start the API and client, choose **Continue with Google**, complete Google's consent/sign-in screen, show the profile in the navbar, then choose **Sign out**. Explain that Google proves the external identity while the server's own bearer token protects subsequent API requests.
 
 ---
 
