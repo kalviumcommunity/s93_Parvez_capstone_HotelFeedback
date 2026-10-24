@@ -1,7 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const { randomBytes } = require('crypto');
+const { randomBytes, randomUUID } = require('crypto');
+const fs = require('fs/promises');
+const path = require('path');
 require('dotenv').config();
 
 const Feedback = require('./models/FeedBack');
@@ -18,8 +20,52 @@ const {
 const Session = require('./models/Session');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '7mb' }));
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
+const UPLOAD_DIRECTORY = path.join(__dirname, 'uploads');
+
+function attachmentValidationError(message) {
+  const error = new Error(message);
+  error.statusCode = 400;
+  return error;
+}
+
+function parseAttachment(attachment) {
+  if (!attachment || typeof attachment !== 'object') return null;
+  if (typeof attachment.fileName !== 'string' || typeof attachment.data !== 'string') {
+    throw attachmentValidationError('Attachment must include a file name and encoded file data');
+  }
+
+  const match = attachment.data.match(/^data:(image\/png|image\/jpeg|application\/pdf);base64,([A-Za-z0-9+/]+={0,2})$/);
+  if (!match) throw attachmentValidationError('Only PNG, JPEG, and PDF files are supported');
+
+  const buffer = Buffer.from(match[2], 'base64');
+  if (buffer.length === 0 || buffer.length > 5 * 1024 * 1024 || buffer.toString('base64') !== match[2]) {
+    throw attachmentValidationError('Files must be smaller than 5 MB and use valid encoding');
+  }
+
+  const signatures = [
+    { contentType: 'image/png', extension: 'png', matches: buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) },
+    { contentType: 'image/jpeg', extension: 'jpg', matches: buffer[0] === 255 && buffer[1] === 216 && buffer[2] === 255 },
+    { contentType: 'application/pdf', extension: 'pdf', matches: buffer.subarray(0, 5).toString('ascii') === '%PDF-' },
+  ];
+  const detected = signatures.find((signature) => signature.matches);
+  if (!detected || detected.contentType !== match[1]) {
+    throw attachmentValidationError('File content does not match its declared type');
+  }
+
+  const fileName = path.basename(attachment.fileName).replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 255);
+  if (!fileName) throw attachmentValidationError('A valid file name is required');
+
+  return {
+    buffer,
+    metadata: {
+      fileName,
+      contentType: detected.contentType,
+      storageName: `${randomUUID()}.${detected.extension}`,
+    },
+  };
+}
 
 // Connect to MongoDB Database
 mongoose
@@ -153,10 +199,39 @@ app.post('/api/auth/logout', authenticate, async (req, res) => {
 
 app.use('/api', authenticate);
 
+app.get('/api/feedback/:id/attachment', async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid feedback id' });
+    }
+
+    const feedback = await Feedback.findById(req.params.id).select('attachment');
+    if (!feedback?.attachment?.storageName) {
+      return res.status(404).json({ success: false, message: 'Attachment not found' });
+    }
+
+    const filePath = path.join(UPLOAD_DIRECTORY, feedback.attachment.storageName);
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Content-Disposition', `attachment; filename="${encodeURIComponent(feedback.attachment.fileName)}"`);
+    res.type(feedback.attachment.contentType);
+    return res.sendFile(filePath, (error) => {
+      if (error && !res.headersSent) {
+        res.status(error.statusCode === 404 ? 404 : 500).json({
+          success: false,
+          message: error.statusCode === 404 ? 'Attachment file not found' : 'Unable to download attachment',
+        });
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Unable to download attachment' });
+  }
+});
+
 // 1. WRITE Operation: Create a new feedback entry (POST)
 app.post('/api/feedback', async (req, res) => {
+  let uploadedFilePath;
   try {
-    const { guestName, source, rating, comment, sentiment, departmentTag } = req.body;
+    const { guestName, source, rating, comment, sentiment, departmentTag, attachment: attachmentInput } = req.body;
     if (!guestName?.trim() || !source || !Number.isInteger(rating) || !comment?.trim()) {
       return res.status(400).json({
         success: false,
@@ -173,10 +248,24 @@ app.post('/api/feedback', async (req, res) => {
       departmentTag,
       isActionRequired: rating <= 2,
     });
+
+    const attachment = parseAttachment(attachmentInput);
+    if (attachment) {
+      await fs.mkdir(UPLOAD_DIRECTORY, { recursive: true });
+      uploadedFilePath = path.join(UPLOAD_DIRECTORY, attachment.metadata.storageName);
+      await fs.writeFile(uploadedFilePath, attachment.buffer, { flag: 'wx' });
+      newFeedback.attachment = attachment.metadata;
+    }
+
     const savedFeedback = await newFeedback.save();
     res.status(201).json({ success: true, data: savedFeedback });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    if (uploadedFilePath) await fs.unlink(uploadedFilePath).catch(() => {});
+    const statusCode = error.statusCode || (error.name === 'ValidationError' ? 400 : 500);
+    res.status(statusCode).json({
+      success: false,
+      message: statusCode === 400 ? error.message : 'Unable to save feedback',
+    });
   }
 });
 
@@ -339,6 +428,11 @@ app.delete('/api/feedback/:id', async (req, res) => {
     }
 
     await ActionTicket.deleteMany({ feedbackId: req.params.id });
+    if (feedback.attachment?.storageName) {
+      await fs.unlink(path.join(UPLOAD_DIRECTORY, feedback.attachment.storageName)).catch((error) => {
+        if (error.code !== 'ENOENT') throw error;
+      });
+    }
     res.status(200).json({ success: true, data: feedback });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -47,6 +47,10 @@ VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id
 
 Restart the client and server after setting these values. Google sign-in is hidden until the client ID is configured. Google accounts are matched by verified email and use the same protected API and revocable session flow as password accounts.
 
+## Feedback File Uploads
+
+The dashboard can attach one PNG, JPEG, or PDF file (up to 5 MB) when creating feedback. The server checks the file signature, assigns a generated storage name, and saves attachment metadata with the feedback record under `server/uploads`. Attachment downloads require an authenticated session. Removing feedback also removes its stored attachment.
+
 ---
 
 ## Day-by-Day Implementation Plan

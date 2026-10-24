@@ -1,0 +1,136 @@
+.feedback-upload {
+  margin: 0 0 28px;
+  padding: 22px 0;
+  border-top: 1px solid #d8e0db;
+  border-bottom: 1px solid #d8e0db;
+  color: #17231f;
+}
+
+.feedback-upload-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.feedback-upload-eyebrow {
+  margin: 0 0 5px;
+  color: #487366;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.feedback-upload-heading h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.feedback-upload-limit {
+  color: #66736d;
+  font-size: 12px;
+}
+
+.feedback-upload-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.feedback-upload-form label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  color: #33433b;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.feedback-upload-form input,
+.feedback-upload-form select,
+.feedback-upload-form textarea {
+  width: 100%;
+  min-height: 42px;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid #cdd7d1;
+  border-radius: 4px;
+  background: #fff;
+  color: #17231f;
+  font: inherit;
+  font-size: 14px;
+}
+
+.feedback-upload-form textarea {
+  resize: vertical;
+}
+
+.feedback-upload-form input:focus,
+.feedback-upload-form select:focus,
+.feedback-upload-form textarea:focus {
+  outline: 2px solid #397665;
+  outline-offset: 1px;
+}
+
+.feedback-upload-comment {
+  grid-column: span 2;
+}
+
+.feedback-upload-file input {
+  padding: 7px;
+}
+
+.feedback-upload-filename {
+  overflow-wrap: anywhere;
+  color: #66736d;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.feedback-upload-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #a02e32;
+  font-size: 13px;
+}
+
+.feedback-upload-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.feedback-upload-actions button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 4px;
+  background: #173e37;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.feedback-upload-actions button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+@media (max-width: 760px) {
+  .feedback-upload-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .feedback-upload-form {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-upload-comment {
+    grid-column: auto;
+  }
+}

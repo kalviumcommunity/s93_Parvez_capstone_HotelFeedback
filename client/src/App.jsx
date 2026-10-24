@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AuthScreen from './components/AuthScreen';
+import FeedbackUploadForm from './components/FeedbackUploadForm';
 
 // ==========================================
 // 1. HEADER / NAVBAR COMPONENT
@@ -91,7 +92,28 @@ function MetricsOverview({ feedbacks }) {
 // ==========================================
 // 3. REUSABLE FEEDBACK CARD COMPONENT
 // ==========================================
-function FeedbackCard({ guestName, source, rating, comment, sentiment, departmentTag, createdAt }) {
+function FeedbackCard({ _id, guestName, source, rating, comment, sentiment, departmentTag, createdAt, attachment, authToken }) {
+  const [downloadError, setDownloadError] = useState('');
+
+  async function downloadAttachment() {
+    setDownloadError('');
+    try {
+      const response = await fetch(`http://localhost:5000/api/feedback/${_id}/attachment`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (!response.ok) throw new Error('Unable to download attachment');
+
+      const downloadUrl = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = attachment.fileName;
+      link.click();
+      URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      setDownloadError(error.message || 'Unable to download attachment');
+    }
+  }
+
   const getBadgeStyle = (type) => {
     switch (type) {
       case 'Positive':
@@ -128,6 +150,15 @@ function FeedbackCard({ guestName, source, rating, comment, sentiment, departmen
       </div>
 
       <p style={styles.comment}>"{comment}"</p>
+
+      {attachment?.storageName && (
+        <div>
+          <button type="button" onClick={downloadAttachment} style={styles.attachmentButton}>
+            Download attachment: {attachment.fileName}
+          </button>
+          {downloadError && <p role="alert" style={styles.feedbackError}>{downloadError}</p>}
+        </div>
+      )}
 
       <div style={styles.cardFooter}>
         <div style={styles.ratingStars}>
@@ -247,6 +278,11 @@ export default function App() {
 
             <MetricsOverview feedbacks={feedbacks} />
 
+            <FeedbackUploadForm
+              token={auth.token}
+              onCreated={(feedback) => setFeedbacks((current) => [feedback, ...current])}
+            />
+
             <div style={styles.filterBar}>
               <span style={styles.filterLabel}>Filter Sentiment:</span>
               {['All', 'Positive', 'Neutral', 'Negative'].map((status) => (
@@ -270,7 +306,7 @@ export default function App() {
                 {feedbackError && <p role="alert" style={styles.feedbackError}>{feedbackError}</p>}
                 <div style={styles.feedList}>
                   {filteredFeedbacks.map((item) => (
-                    <FeedbackCard key={item._id || item.id} {...item} />
+                    <FeedbackCard key={item._id || item.id} {...item} authToken={auth.token} />
                   ))}
                   {!feedbackError && filteredFeedbacks.length === 0 && (
                     <p style={{ color: '#64748b' }}>No feedback entries yet.</p>
@@ -443,6 +479,16 @@ const styles = {
   feedbackError: {
     color: '#b91c1c',
     marginBottom: '0.75rem',
+  },
+  attachmentButton: {
+    padding: 0,
+    border: 0,
+    background: 'transparent',
+    color: '#17634f',
+    font: 'inherit',
+    fontSize: '0.85rem',
+    textDecoration: 'underline',
+    cursor: 'pointer',
   },
   navButton: {
     background: 'none',
