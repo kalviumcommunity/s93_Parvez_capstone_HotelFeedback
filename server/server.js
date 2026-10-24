@@ -1,12 +1,20 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const { randomBytes } = require('crypto');
 require('dotenv').config();
 
 const Feedback = require('./models/FeedBack');
 const ActionTicket = require('./models/ActionTickets');
 const User = require('./models/User');
-const { authenticate, createSession, hashPassword, hashSessionToken, verifyPassword } = require('./auth');
+const {
+  authenticate,
+  createSession,
+  hashPassword,
+  hashSessionToken,
+  verifyGoogleCredential,
+  verifyPassword,
+} = require('./auth');
 const Session = require('./models/Session');
 
 const app = express();
@@ -59,7 +67,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const user = await User.findOne({ username: username.trim().toLowerCase() }).select('+passwordHash');
-    if (!user || !(await verifyPassword(password, user.passwordHash))) {
+    if (!user || !user.passwordHash || !(await verifyPassword(password, user.passwordHash))) {
       if (!user) await hashPassword(password);
       return res.status(401).json({ success: false, message: 'Incorrect username or password' });
     }
@@ -71,6 +79,66 @@ app.post('/api/auth/login', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Unable to sign in' });
+  }
+});
+
+app.post('/api/auth/google', async (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const { credential } = req.body;
+  if (!clientId) {
+    return res.status(503).json({ success: false, message: 'Google sign-in is not configured' });
+  }
+  if (typeof credential !== 'string' || credential.length > 8192) {
+    return res.status(400).json({ success: false, message: 'A valid Google credential is required' });
+  }
+
+  let identity;
+  try {
+    identity = await verifyGoogleCredential(credential, clientId);
+  } catch (error) {
+    return res.status(401).json({ success: false, message: 'Google sign-in could not be verified' });
+  }
+
+  const { googleId, email } = identity;
+  try {
+    let user = await User.findOne({ googleId });
+    if (!user) {
+      user = await User.findOne({ email });
+      if (user?.googleId && user.googleId !== googleId) {
+        return res.status(409).json({ success: false, message: 'This email is linked to another Google account' });
+      }
+
+      if (user) {
+        user.googleId = googleId;
+        await user.save();
+      } else {
+        const baseUsername = email.split('@')[0].replace(/[^a-z0-9._-]/g, '').slice(0, 23) || 'googleuser';
+        let username;
+        do {
+          username = `${baseUsername}-${randomBytes(4).toString('hex')}`;
+        } while (await User.exists({ username }));
+
+        user = await User.create({ username, email, googleId });
+      }
+    }
+
+    const session = await createSession(user._id);
+    res.status(200).json({
+      success: true,
+      data: { token: session.token, user: { id: user._id, username: user.username } },
+    });
+  } catch (error) {
+    if (error.code === 11000 && googleId) {
+      const existingUser = await User.findOne({ googleId });
+      if (existingUser) {
+        const session = await createSession(existingUser._id);
+        return res.status(200).json({
+          success: true,
+          data: { token: session.token, user: { id: existingUser._id, username: existingUser.username } },
+        });
+      }
+    }
+    res.status(500).json({ success: false, message: 'Unable to complete Google sign-in' });
   }
 });
 
