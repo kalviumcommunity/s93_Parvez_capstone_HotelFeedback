@@ -34,6 +34,32 @@ async function verifyPassword(password, storedHash) {
   return timingSafeEqual(actual, expected);
 }
 
+async function verifyGoogleCredential(credential, clientId) {
+  const verificationUrl = new URL('https://oauth2.googleapis.com/tokeninfo');
+  verificationUrl.searchParams.set('id_token', credential);
+
+  const response = await fetch(verificationUrl, { signal: AbortSignal.timeout(5000) });
+  if (!response.ok) throw new Error('Invalid Google credential');
+
+  const claims = await response.json();
+  const expiresAt = Number(claims.exp);
+  if (
+    claims.aud !== clientId ||
+    !['accounts.google.com', 'https://accounts.google.com'].includes(claims.iss) ||
+    typeof claims.sub !== 'string' ||
+    !claims.sub ||
+    typeof claims.email !== 'string' ||
+    !claims.email ||
+    !['true', true].includes(claims.email_verified) ||
+    !Number.isFinite(expiresAt) ||
+    expiresAt <= Math.floor(Date.now() / 1000)
+  ) {
+    throw new Error('Invalid Google credential');
+  }
+
+  return { googleId: claims.sub, email: claims.email.trim().toLowerCase() };
+}
+
 function hashSessionToken(token) {
   return createHash('sha256').update(token).digest('hex');
 }
@@ -135,4 +161,11 @@ async function authenticate(req, res, next) {
   }
 }
 
-module.exports = { authenticate, createSession, hashPassword, hashSessionToken, verifyPassword };
+module.exports = {
+  authenticate,
+  createSession,
+  hashPassword,
+  hashSessionToken,
+  verifyGoogleCredential,
+  verifyPassword,
+};

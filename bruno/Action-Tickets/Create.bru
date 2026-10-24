@@ -1,0 +1,28 @@
+meta {
+  name: Create Action Ticket
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/action-tickets
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "feedbackId": "{{feedbackId}}",
+    "assignedTo": "Front Desk Manager",
+    "issueDescription": "Follow up with the guest about the delayed room readiness.",
+    "priority": "High"
+  }
+}

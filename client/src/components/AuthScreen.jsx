@@ -1,12 +1,57 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './AuthScreen.css';
 
 const API_URL = 'http://localhost:5000/api/auth';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function AuthScreen({ onAuthenticated }) {
   const [mode, setMode] = useState('login');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const googleButtonRef = useRef(null);
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || !googleButtonRef.current) return undefined;
+
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.onload = () => {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: async ({ credential }) => {
+          setBusy(true);
+          setError('');
+          try {
+            const response = await fetch(`${API_URL}/google`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ credential }),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Google sign-in failed');
+            onAuthenticated(result.data);
+          } catch (requestError) {
+            setError(requestError.message || 'Could not connect to the server');
+          } finally {
+            setBusy(false);
+          }
+        },
+      });
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'rectangular',
+        width: googleButtonRef.current.clientWidth,
+      });
+    };
+    script.onerror = () => setError('Google sign-in could not be loaded');
+    document.head.appendChild(script);
+
+    return () => script.remove();
+  }, [onAuthenticated]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -103,7 +148,15 @@ export default function AuthScreen({ onAuthenticated }) {
             </button>
           </form>
 
-          <p className="auth-security-note">Passwords are stored as one-way hashes.</p>
+          {GOOGLE_CLIENT_ID && (
+            <>
+              <div className="auth-divider"><span>OR</span></div>
+              <div className="auth-google-button" ref={googleButtonRef} />
+              {busy && <p className="auth-google-status">Verifying Google account...</p>}
+            </>
+          )}
+
+          <p className="auth-security-note">Password accounts use one-way hashes. Google tokens are verified by the server.</p>
         </div>
       </section>
     </main>

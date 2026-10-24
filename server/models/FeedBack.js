@@ -36,6 +36,11 @@ const feedbackSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    attachment: {
+      fileName: { type: String, maxlength: 255 },
+      contentType: { type: String, enum: ['image/png', 'image/jpeg', 'application/pdf'] },
+      storageName: { type: String, match: /^[a-f\d-]{36}\.(png|jpg|pdf)$/i },
+    },
   },
   {
     timestamps: true,

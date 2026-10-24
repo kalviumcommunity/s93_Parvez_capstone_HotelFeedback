@@ -1,0 +1,27 @@
+meta {
+  name: Update Feedback
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/api/feedback/{{feedbackId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "rating": 4,
+    "comment": "The room was comfortable and the staff were helpful.",
+    "sentiment": "Positive"
+  }
+}
