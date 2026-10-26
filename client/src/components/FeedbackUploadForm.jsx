@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import './FeedbackUploadForm.css';
 
 const FEEDBACK_API = 'http://localhost:5000/api/feedback';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_FILE_TYPES = ['image/png', 'image/jpeg', 'application/pdf'];
 
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -17,6 +18,41 @@ export default function FeedbackUploadForm({ token, onCreated }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const fileInputRef = useRef(null);
+
+  function validateFile(file) {
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      return 'Unsupported file type. Choose a PNG, JPEG, or PDF file.';
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return 'File is too large. Choose a file no larger than 5 MB.';
+    }
+    return '';
+  }
+
+  function handleFileChange(event) {
+    const file = event.currentTarget.files?.[0] || null;
+    setError('');
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+
+    const validationError = validateFile(file);
+    if (validationError) {
+      event.currentTarget.value = '';
+      setSelectedFile(null);
+      setError(validationError);
+      return;
+    }
+    setSelectedFile(file);
+  }
+
+  function clearSelectedFile() {
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setSelectedFile(null);
+    setError('');
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -24,9 +60,12 @@ export default function FeedbackUploadForm({ token, onCreated }) {
     const formData = new FormData(form);
     setError('');
 
-    if (selectedFile && selectedFile.size > MAX_FILE_SIZE) {
-      setError('Choose a file smaller than 5 MB.');
-      return;
+    if (selectedFile) {
+      const validationError = validateFile(selectedFile);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
     }
 
     setBusy(true);
@@ -52,14 +91,19 @@ export default function FeedbackUploadForm({ token, onCreated }) {
         },
         body: JSON.stringify(payload),
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || 'Unable to save feedback');
+      const result = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(result?.message || `Upload failed (${response.status}). Check the file and try again.`);
+      }
+      if (!result?.data) throw new Error('The server response was incomplete. Please try again.');
 
       onCreated(result.data);
       form.reset();
       setSelectedFile(null);
     } catch (requestError) {
-      setError(requestError.message || 'Unable to upload the selected file');
+      setError(requestError instanceof TypeError
+        ? 'Unable to reach the API. Check that the server is running and try again.'
+        : requestError.message || 'Unable to upload the selected file');
     } finally {
       setBusy(false);
     }
@@ -109,9 +153,15 @@ export default function FeedbackUploadForm({ token, onCreated }) {
             name="attachment"
             type="file"
             accept="image/png,image/jpeg,application/pdf"
-            onChange={(event) => setSelectedFile(event.target.files[0] || null)}
+            ref={fileInputRef}
+            onChange={handleFileChange}
           />
           {selectedFile && <span className="feedback-upload-filename">{selectedFile.name}</span>}
+          {selectedFile && (
+            <button className="feedback-upload-clear" type="button" onClick={clearSelectedFile}>
+              Remove selected file
+            </button>
+          )}
         </label>
         {error && <p className="feedback-upload-error" role="alert">{error}</p>}
         <div className="feedback-upload-actions">

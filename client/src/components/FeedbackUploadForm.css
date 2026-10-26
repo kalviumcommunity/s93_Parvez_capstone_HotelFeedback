@@ -89,6 +89,18 @@
   font-weight: 400;
 }
 
+.feedback-upload-clear {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #17634f;
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .feedback-upload-error {
   grid-column: 1 / -1;
   margin: 0;

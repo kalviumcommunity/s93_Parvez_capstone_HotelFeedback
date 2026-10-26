@@ -53,7 +53,9 @@ For a demo, configure the same OAuth client ID in both apps, start the API and c
 
 ## Feedback File Uploads
 
-The dashboard can attach one PNG, JPEG, or PDF file (up to 5 MB) when creating feedback. The server checks the file signature, assigns a generated storage name, and saves attachment metadata with the feedback record under `server/uploads`. Attachment downloads require an authenticated session. Removing feedback also removes its stored attachment.
+The dashboard can attach one PNG, JPEG, or PDF file (up to 5 MB) when creating feedback. The client checks file type and size on selection; the server repeats those checks against the decoded content signature, assigns a generated storage name, and saves attachment metadata with the feedback record under `server/uploads`. Authenticated downloads return the original file name. Removing feedback also removes its stored attachment. Invalid types, oversized files, malformed request bodies, and unavailable API connections display actionable errors.
+
+For a three-minute walkthrough, show the feedback form and allowed file limits, select a valid image or PDF and save the feedback, then download the attachment from its feedback card and show the file in `server/uploads`. Next choose an unsupported file (use the file picker’s “All files” filter if needed) and show the immediate validation message. Explain that client checks improve feedback while the server independently enforces the 5 MB limit and file signature before writing a generated file name to disk. End by noting that the download route requires an authenticated session.
 
 ## Bruno API Collection
 
