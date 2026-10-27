@@ -4,6 +4,10 @@ meta {
   seq: 4
 }
 
+docs {
+  Deletes the selected action ticket. Requires a valid bearer token and an existing ticket ID in the Local environment; run after any retrieval or update steps that need the ticket.
+}
+
 delete {
   url: {{baseUrl}}/api/action-tickets/{{actionTicketId}}
   body: none

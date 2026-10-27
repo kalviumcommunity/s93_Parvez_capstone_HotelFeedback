@@ -4,6 +4,10 @@ meta {
   seq: 5
 }
 
+docs {
+  Downloads the attachment for the selected feedback record. Requires a valid bearer token and a feedback ID with an uploaded attachment; use the ID returned by Create Feedback With Attachment.
+}
+
 get {
   url: {{baseUrl}}/api/feedback/{{feedbackId}}/attachment
   body: none

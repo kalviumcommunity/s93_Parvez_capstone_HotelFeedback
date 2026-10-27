@@ -4,6 +4,10 @@ meta {
   seq: 6
 }
 
+docs {
+  Updates the selected feedback rating, comment, and sentiment. Requires a valid bearer token and an existing feedback ID in the Local environment; use the ID returned by Create Feedback.
+}
+
 put {
   url: {{baseUrl}}/api/feedback/{{feedbackId}}
   body: json

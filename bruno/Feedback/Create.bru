@@ -4,6 +4,10 @@ meta {
   seq: 1
 }
 
+docs {
+  Creates a feedback record with the sample guest, source, rating, and comment. Requires a valid bearer token; the successful response returns the saved record and its ID for later requests.
+}
+
 post {
   url: {{baseUrl}}/api/feedback
   body: json

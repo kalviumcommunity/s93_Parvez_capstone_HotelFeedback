@@ -4,6 +4,10 @@ meta {
   seq: 3
 }
 
+docs {
+  Updates the selected action ticket's status, priority, and assignee. Requires a valid bearer token and an existing ticket ID in the Local environment; use the ID returned by Create Action Ticket.
+}
+
 put {
   url: {{baseUrl}}/api/action-tickets/{{actionTicketId}}
   body: json
