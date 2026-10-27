@@ -4,6 +4,10 @@ meta {
   seq: 2
 }
 
+docs {
+  Lists action tickets for the authenticated user. Requires a valid bearer token; the successful response contains the user's tickets, or an empty list when none exist.
+}
+
 get {
   url: {{baseUrl}}/api/action-tickets
   body: none

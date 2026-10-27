@@ -4,6 +4,10 @@ meta {
   seq: 3
 }
 
+docs {
+  Lists feedback matching the sample source and rating query parameters. Requires a valid bearer token; the successful response contains the matching records, or an empty list when none match.
+}
+
 get {
   url: {{baseUrl}}/api/feedback?source=Google&rating=5
   body: none

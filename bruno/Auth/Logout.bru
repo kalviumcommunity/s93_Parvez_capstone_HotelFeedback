@@ -4,6 +4,10 @@ meta {
   seq: 4
 }
 
+docs {
+  Revokes the session identified by the bearer token in the Local environment. Run after a successful register or login request; a successful response confirms sign-out.
+}
+
 post {
   url: {{baseUrl}}/api/auth/logout
   body: none

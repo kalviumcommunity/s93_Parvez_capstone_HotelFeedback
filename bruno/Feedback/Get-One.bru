@@ -4,6 +4,10 @@ meta {
   seq: 4
 }
 
+docs {
+  Retrieves one feedback record by ID. Requires a valid bearer token and an existing MongoDB ObjectId in the Local environment; use the ID returned by Create Feedback.
+}
+
 get {
   url: {{baseUrl}}/api/feedback/{{feedbackId}}
   body: none

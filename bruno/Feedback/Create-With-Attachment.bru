@@ -4,6 +4,10 @@ meta {
   seq: 2
 }
 
+docs {
+  Creates feedback with the included PNG data URL. Requires a valid bearer token; the API validates file type, content signature, and the 5 MB limit, then returns the saved record and attachment metadata.
+}
+
 post {
   url: {{baseUrl}}/api/feedback
   body: json

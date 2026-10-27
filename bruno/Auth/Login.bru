@@ -4,6 +4,10 @@ meta {
   seq: 2
 }
 
+docs {
+  Authenticates an existing local account. On success, the response contains the user and a new session token, which this request saves to the Local environment for protected requests.
+}
+
 post {
   url: {{baseUrl}}/api/auth/login
   body: json

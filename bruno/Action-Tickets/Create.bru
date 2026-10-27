@@ -4,6 +4,10 @@ meta {
   seq: 1
 }
 
+docs {
+  Creates an action ticket linked to an existing feedback record. Requires a valid bearer token and an existing feedback ObjectId in the Local environment; use a feedback ID returned by Create Feedback.
+}
+
 post {
   url: {{baseUrl}}/api/action-tickets
   body: json

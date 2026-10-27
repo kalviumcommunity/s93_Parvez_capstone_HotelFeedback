@@ -4,6 +4,10 @@ meta {
   seq: 7
 }
 
+docs {
+  Deletes the selected feedback record and any stored attachment. Requires a valid bearer token and an existing feedback ID; run after any retrieval or download steps that need the record.
+}
+
 delete {
   url: {{baseUrl}}/api/feedback/{{feedbackId}}
   body: none

@@ -4,6 +4,10 @@ meta {
   seq: 3
 }
 
+docs {
+  Exchanges a valid Google Identity Services ID token for an app session. Requires GOOGLE_CLIENT_ID on the server and a real ID token in the Local environment; a successful response saves the app token for protected requests.
+}
+
 post {
   url: {{baseUrl}}/api/auth/google
   body: json
