@@ -5,7 +5,7 @@
 ## Mock UX Design
 
 Design Link:
-https://www.figma.com/design/e6D1ToP4ZW7YC3f9qeWo8Q/Untitled?node-id=0-1&t=l9PaTJgHLdO0gPsI-1
+[https://www.figma.com/design/e6D1ToP4ZW7YC3f9qeWo8Q/Untitled?node-id=0-1&t=l9PaTJgHLdO0gPsI-1](http://localhost:5173/)
 
 
 ## Brief Description & Idea
