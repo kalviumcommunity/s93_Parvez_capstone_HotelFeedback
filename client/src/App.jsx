@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import AuthScreen from './components/AuthScreen';
 import FeedbackUploadForm from './components/FeedbackUploadForm';
 
+const API_BASE = import.meta.env.VITE_API_URL || (
+  typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+    ? window.location.origin
+    : 'http://localhost:5000'
+);
+
 // ==========================================
 // 1. HEADER / NAVBAR COMPONENT
 // ==========================================
@@ -98,7 +104,7 @@ function FeedbackCard({ _id, guestName, source, rating, comment, sentiment, depa
   async function downloadAttachment() {
     setDownloadError('');
     try {
-      const response = await fetch(`http://localhost:5000/api/feedback/${_id}/attachment`, {
+      const response = await fetch(`${API_BASE}/api/feedback/${_id}/attachment`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       if (!response.ok) throw new Error('Unable to download attachment');
@@ -199,7 +205,7 @@ export default function App() {
     let active = true;
     setLoading(true);
     setFeedbackError('');
-    fetch('http://localhost:5000/api/feedback', {
+    fetch(`${API_BASE}/api/feedback`, {
       headers: { Authorization: `Bearer ${auth.token}` },
     })
       .then(async (response) => {
@@ -237,7 +243,7 @@ export default function App() {
 
   const handleSignOut = async () => {
     try {
-      await fetch('http://localhost:5000/api/auth/logout', {
+      await fetch(`${API_BASE}/api/auth/logout`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${auth.token}` },
       });

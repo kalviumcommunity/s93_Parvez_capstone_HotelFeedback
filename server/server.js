@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const { randomBytes, randomUUID } = require('crypto');
 const fs = require('fs/promises');
+const fsSync = require('fs');
 const path = require('path');
 require('dotenv').config();
 
@@ -20,9 +21,33 @@ const {
 const Session = require('./models/Session');
 
 const app = express();
+const DIST_DIRECTORY = path.join(__dirname, '..', 'client', 'dist');
+const allowedOrigins = new Set([
+  process.env.CLIENT_ORIGIN,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+].filter(Boolean));
+
 app.use(express.json({ limit: '7mb' }));
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(null, true);
+  },
+  credentials: true,
+}));
 const UPLOAD_DIRECTORY = path.join(__dirname, 'uploads');
+
+app.get('/health', (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ status: 'unavailable' });
+  }
+  return res.status(200).json({ status: 'ok' });
+});
 
 function attachmentValidationError(message) {
   const error = new Error(message);
@@ -456,6 +481,13 @@ app.delete('/api/action-tickets/:id', async (req, res) => {
   }
 });
 
+if (fsSync.existsSync(DIST_DIRECTORY)) {
+  app.use(express.static(DIST_DIRECTORY));
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(DIST_DIRECTORY, 'index.html'));
+  });
+}
+
 app.use((error, req, res, next) => {
   if (error.type === 'entity.too.large') {
     return res.status(413).json({
@@ -468,7 +500,6 @@ app.use((error, req, res, next) => {
   }
   return next(error);
 });
-
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

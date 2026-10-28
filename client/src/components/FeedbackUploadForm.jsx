@@ -1,7 +1,12 @@
 import { useRef, useState } from 'react';
 import './FeedbackUploadForm.css';
 
-const FEEDBACK_API = 'http://localhost:5000/api/feedback';
+const API_BASE = import.meta.env.VITE_API_URL || (
+  typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+    ? window.location.origin
+    : 'http://localhost:5000'
+);
+const FEEDBACK_API = `${API_BASE}/api/feedback`;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = ['image/png', 'image/jpeg', 'application/pdf'];
 

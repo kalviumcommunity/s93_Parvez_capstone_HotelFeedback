@@ -23,42 +23,6 @@ The **Hotel Guest Feedback Intelligence Platform** is an external multi-channel 
 * **Reputation Analytics Dashboard:** Visualizes cross-channel rating trends, department-level performance metrics, and sentiment distribution over time.
 * **Response Management:** Allows hotel managers to draft and track response statuses (Pending, Responded, Escalated) for external reviews.
 
-## Authentication
-
-Create an account or sign in from the application using a username and password. Usernames are 3-32 characters and may contain letters, numbers, dots, underscores, and hyphens. Passwords must be at least 8 characters.
-
-`POST /api/auth/register` creates an account, and `POST /api/auth/login` starts a 12-hour session. Both return an HS256-signed JWT bearer token. Set `JWT_SECRET` in `server/.env` to a private value of at least 32 bytes before starting the server. The server also stores a hash of each issued token so `POST /api/auth/logout` can revoke the current session. The client keeps the token for the current browser session and sends it with protected API requests. All other `/api` routes require a valid, unexpired bearer token.
-
-### Google Sign-In Setup
-
-Google sign-in uses Google Identity Services in the client and verifies the returned ID token on the server before creating an app session. Create an OAuth 2.0 Web application client in Google Cloud Console, and add the client application's origins (for local development, `http://localhost:5173`) to its authorized JavaScript origins.
-
-Set the same OAuth client ID in both environment files:
-
-```env
-# server/.env
-GOOGLE_CLIENT_ID=your-google-oauth-client-id
-```
-
-```env
-# client/.env
-VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id
-```
-
-Restart the client and server after setting these values. Google sign-in is hidden until the client ID is configured. Google accounts are matched by verified email and use the same protected API and revocable session flow as password accounts.
-
-## Feedback File Uploads
-
-The dashboard can attach one PNG, JPEG, or PDF file (up to 5 MB) when creating feedback. The client checks file type and size on selection; the server repeats those checks against the decoded content signature, assigns a generated storage name, and saves attachment metadata with the feedback record under `server/uploads`. Authenticated downloads return the original file name. Removing feedback also removes its stored attachment. Invalid types, oversized files, malformed request bodies, and unavailable API connections display actionable errors.
-
-For a three-minute walkthrough, show the feedback form and allowed file limits, select a valid image or PDF and save the feedback, then download the attachment from its feedback card and show the file in `server/uploads`. Next choose an unsupported file (use the file picker’s “All files” filter if needed) and show the immediate validation message. Explain that client checks improve feedback while the server independently enforces the 5 MB limit and file signature before writing a generated file name to disk. End by noting that the download route requires an authenticated session.
-
-## Bruno API Collection
-
-The Bruno request collection for all API routes is in [bruno/](bruno/). Open the folder in Bruno, select the `Local` environment, and start the server. Request examples and authentication notes are in [bruno/README.md](bruno/README.md).
-
----
-
 ## Day-by-Day Implementation Plan
 
 ### Week 1: Foundation & Setup
