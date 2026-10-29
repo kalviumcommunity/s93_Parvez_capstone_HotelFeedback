@@ -27,35 +27,12 @@ The **Hotel Guest Feedback Intelligence Platform** is an external multi-channel 
 
 Create an account or sign in from the application using a username and password. Usernames are 3-32 characters and may contain letters, numbers, dots, underscores, and hyphens. Passwords must be at least 8 characters.
 
-`POST /api/auth/register` creates an account, and `POST /api/auth/login` starts a 12-hour session. Both return an HS256-signed JWT bearer token. Set `JWT_SECRET` in `server/.env` to a private value of at least 32 bytes before starting the server. The server also stores a hash of each issued token so `POST /api/auth/logout` can revoke the current session. The client keeps the token for the current browser session and sends it with protected API requests. All other `/api` routes require a valid, unexpired bearer token.
 
-### Google Sign-In Setup
 
-Google sign-in uses Google Identity Services in the client and verifies the returned ID token on the server before creating an app session. Create an OAuth 2.0 Web application client in Google Cloud Console, and add the client application's origins (for local development, `http://localhost:5173`) to its authorized JavaScript origins.
-
-Set the same OAuth client ID in both environment files:
-
-```env
-# server/.env
-GOOGLE_CLIENT_ID=your-google-oauth-client-id
-```
-
-```env
-# client/.env
-VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id
-```
-
-Restart the client and server after setting these values. Google sign-in is hidden until the client ID is configured. Google accounts are matched by verified email and use the same protected API and revocable session flow as password accounts. On success, the app shows the verified Google display name and email in the signed-in navbar; use **Sign out** to revoke the session and return to the authentication screen.
-
-The sign-in flow uses Google Identity Services to obtain an ID token. The client sends that token to `POST /api/auth/google`; the server verifies its audience, issuer, expiry, and verified-email claim before creating or matching the user and issuing the app's own session token.
-
-For a demo, configure the same OAuth client ID in both apps, start the API and client, choose **Continue with Google**, complete Google's consent/sign-in screen, show the profile in the navbar, then choose **Sign out**. Explain that Google proves the external identity while the server's own bearer token protects subsequent API requests.
 
 ## Feedback File Uploads
 
-The dashboard can attach one PNG, JPEG, or PDF file (up to 5 MB) when creating feedback. The client checks file type and size on selection; the server repeats those checks against the decoded content signature, assigns a generated storage name, and saves attachment metadata with the feedback record under `server/uploads`. Authenticated downloads return the original file name. Removing feedback also removes its stored attachment. Invalid types, oversized files, malformed request bodies, and unavailable API connections display actionable errors.
-
-For a three-minute walkthrough, show the feedback form and allowed file limits, select a valid image or PDF and save the feedback, then download the attachment from its feedback card and show the file in `server/uploads`. Next choose an unsupported file (use the file picker’s “All files” filter if needed) and show the immediate validation message. Explain that client checks improve feedback while the server independently enforces the 5 MB limit and file signature before writing a generated file name to disk. End by noting that the download route requires an authenticated session.
+The dashboard can attach one PNG, JPEG, or PDF file (up to 5 MB) when creating feedback. 
 
 ## Bruno API Collection
 
